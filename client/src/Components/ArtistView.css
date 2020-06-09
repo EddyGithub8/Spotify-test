@@ -1,0 +1,84 @@
+.main{
+    margin: 20px;
+
+    width: 300px;
+    height: 450px;
+    position: relative;
+
+    border: 1px solid grey;
+    background-color: whitesmoke;
+}
+
+.main div{
+    text-align: left;
+    padding-left: 10px;
+}
+
+.main:hover{
+    border: 1px solid black;
+}
+
+.mainname{
+    color: black;
+    font-size: 50px;
+    text-align: start;
+    padding-left: 120px;
+}
+
+.name {
+    color: black;
+    font-size: 20px;
+    text-align: start;   
+}
+
+.subname {
+    color: grey;
+    font-size: 15px;
+    text-align: start;
+}
+
+.star {
+    width: 30px;
+    height: auto;
+}
+
+.subtitle{
+    font-size: 20;
+    text-align: left;
+    padding-left: 120px;
+    color: grey;
+  }
+
+.previewLink{
+    width: 100%;
+
+    position: absolute;
+    bottom: 0px; 
+    left: 0;
+    
+}
+
+.previewbutton {
+    border: 0px;
+    border-top: 1px solid grey;
+
+    font-size: 15px;
+    background-color: lightgrey;
+
+    width: 100%;
+    height: 100%;
+
+    float: left;
+    cursor: pointer;
+}
+
+.circular-square {
+    width: 100%;
+    height: 60%;
+    overflow: hidden;
+    object-fit: cover;
+
+    border-bottom: 1px solid grey;
+
+    background-color: rgb(54, 54, 54);
+  }
