@@ -1,5 +1,4 @@
 import React from 'react'
-import Spotify from 'spotify-web-api-js'
 import NumberFormat from 'react-number-format'
 
 import './ArtistView.css'
@@ -8,19 +7,11 @@ import logo from './logo.svg'
 import star from './icons8-star-filled-96.png'
 import halfStar from './icons8-star-half-96.png'
 
-const spotifyWebApi = new Spotify()
 
 
 class ArtistView extends React.Component{
     state = {
         artist: this.props.artist,
-    }
-
-    handleClick = () => {
-        spotifyWebApi.searchAlbums("artist:" + this.state.artist.name)
-            .then(response => {
-                console.log(response)
-            })
     }
 
     render(){
@@ -41,7 +32,7 @@ class ArtistView extends React.Component{
         
         return(
             <div className = "main" style = {{cursor: "pointer"}}
-             onClick = {() => this.props.handleClick(this.state.artist.name)}>
+             onClick = {() => this.props.handleClick(this.state.artist.id, this.state.artist.name)}>
 
                 <img src = {image ? image.url : logo } alt = "" 
                 className = "circular-square"/><br />

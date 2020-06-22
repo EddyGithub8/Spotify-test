@@ -1,7 +1,8 @@
 import React from 'react'
+import _ from 'lodash'
 import Spotify from 'spotify-web-api-js'
 import SpotifyLogin from 'react-spotify-login'
-import {withRouter, Route, Redirect} from 'react-router-dom'
+import {withRouter, Route } from 'react-router-dom'
 
 import './App.css'
 import search from './search.svg'
@@ -23,12 +24,45 @@ class App extends React.Component{
       albums: [],
 
       name: "",
+      next: "",
 
       searchValue: "",
-      isTokenValid: false,
+      token: "",
     }
 
     this.state = JSON.parse(sessionStorage.getItem('state')) || defaultState
+
+    this.searchArtist = _.debounce(this.searchArtist, 50)
+  }
+
+  handleScroll = () => {
+    const windowHeight = "innerHeight" in window ? 
+        window.innerHeight : document.documentElement.offsetHeight
+
+    const body = document.body
+    const html = document.documentElement
+
+    const docHeight = Math.max(body.scrollHeight, body.offsetHeight,
+            html.clientHeight, html.scrollHeight, html.offsetHeight)
+
+    const windowBottom = windowHeight + window.pageYOffset
+
+    
+    if (windowBottom + 1500 >= docHeight && this.state.next) {
+      spotifyWebApi.getGeneric(this.state.next)
+      .then(response => {
+        this.updateStateElement("next", response.artists.next)
+        this.state.artists.push(...response.artists.items)
+      }).catch(this.handleFailure)
+    }
+  }
+
+  componentDidMount() {
+    window.addEventListener("scroll", this.handleScroll);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("scroll", this.handleScroll);
   }
 
   updateStateElement = (key, value)=> {
@@ -37,40 +71,40 @@ class App extends React.Component{
     }, () => sessionStorage.setItem('state', JSON.stringify(this.state)))
   }
 
-  handleClick = (name) => {
+  handleClick = (id, name) => {
     const option = {
       limit: 50,
     }
     
-    const query = "artist:" + "\"" + name + "\""
-    spotifyWebApi.searchAlbums(query, option)
+    spotifyWebApi.getArtistAlbums(id, option)
       .then((response) => {
-        
-        let sortedAlbum = []
-        response.albums.items.map(album => {
-          album.artists.map(artist => {
-            if(artist.name === name)
-              sortedAlbum.push(album)
-          })
-        })
-        this.updateStateElement("albums", sortedAlbum)
         this.updateStateElement("name", name)
+        this.updateStateElement("albums", response.items)
       })
 
-    this.props.history.push("/artist")
+    this.props.history.push("/artist/id=" + id)
+  }
+
+  searchArtist = (value, option) => {
+      spotifyWebApi.searchArtists(value, option)
+        .then((response) => {
+          console.log(response)
+          this.updateStateElement("next", response.artists.next)
+          this.updateStateElement("artists", response.artists.items)
+        }).catch(() => {this.handleFailure()})    
   }
 
   handleChange = (event) => {
     const {value} = event.target
     this.updateStateElement("searchValue", value)
+
+    if(value === "")
+      return
     const option = {
       limit: 50,
     }
 
-    spotifyWebApi.searchArtists(value, option)
-      .then((response) => {
-        this.updateStateElement("artists", response.artists.items)
-      })
+    this.searchArtist(value, option)
   }
 
   handleKey = (event) => {
@@ -80,7 +114,6 @@ class App extends React.Component{
 
   handleFailure = () => {
       this.props.history.push('/wasted')
-      this.updateStateElement("isTokenValid", false)
   }
 
   handleSuccess = (token) => {
@@ -88,18 +121,19 @@ class App extends React.Component{
       return
 
     spotifyWebApi.setAccessToken(token.access_token)
-    this.updateStateElement("isTokenValid", true)
+    this.updateStateElement("token", token.access_token)
     this.props.history.push("/search")
   }
 
   render(){
     const canSearchBarAppear = this.props.history.location.pathname === "/search" 
-                                      && this.state.isTokenValid
+                                      && this.state.token !== ""
 
     return (
       <div className="App">
           <Route exact path = "/" component = {() => 
-              (<SpotifyLogin clientId = {clientId}
+              (<SpotifyLogin className = "login"
+                      clientId = {clientId}
                       redirectUri = {redirectUri}
                       onFailure = {this.handleFailure}
                       onSuccess = {this.handleSuccess} />)}/><br />
@@ -108,8 +142,8 @@ class App extends React.Component{
           (<div style = {{position: "absolute", top: 10, left: "35%"}}>
             <input placeholder = "Search for an Artist..."
               value = {this.state.searchValue}
-            onChange = { this.handleChange } 
-            onKeyDown = { this.handleKey } className = "search"/>
+              onChange = { this.handleChange } 
+              onKeyDown = { this.handleKey } className = "search"/>
             <img src = { search } alt = "" className = "searchIcon"/>
           </div>)}<br />
 
@@ -121,9 +155,10 @@ class App extends React.Component{
                 </div>)} />
 
           <Route path = "/artist" component = 
-          {() => (<BrowseAlbum albums = {this.state.albums} name = {this.state.name}/>)} />
+          {() => (<BrowseAlbum albums = {this.state.albums}
+           id = {this.state.currentId} name = {this.state.name}/>)} />
 
-          <Route path = "/wasted" component = {() => <h1>Wasted</h1>}/>
+          <Route path = "/wasted" component = {() => <h1 style = {{color: "black"}}>Wasted</h1>}/>
       </div>
     )
   }
